@@ -1,3 +1,4 @@
+import core.routing
 import os
 
 from channels.auth import AuthMiddlewareStack
@@ -10,7 +11,6 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "chat.settings")
 # is populated before importing code that may import ORM models.
 django_asgi_app = get_asgi_application()
 
-import core.routing
 
 application = ProtocolTypeRouter(
     {

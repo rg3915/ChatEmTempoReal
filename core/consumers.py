@@ -6,12 +6,11 @@ from django.contrib.auth.models import User
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 
+
 class ChatConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        self.room_name = self.scope["url_route"]["kwargs"]["room_name"] # vem la da URL ver ela qual quer coisa
+        self.room_name = self.scope["url_route"]["kwargs"]["room_name"]  # vem la da URL ver ela qualquer coisa
         self.room_group_name = "chat_%s" % self.room_name
-
-        
 
         # Join room group
         await self.channel_layer.group_add(
@@ -40,7 +39,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             criar_sala = Sala(sala=self.room_name)
             await database_sync_to_async(criar_sala.save)()
             await database_sync_to_async(criar_sala.usuarios_permitidos.add)(self.scope['user'], objt_outro_usuario)
-        
+
         sala_obj = await database_sync_to_async(list)(Sala.objects.filter(sala=self.room_name))
         print('isso que o obj sala retorna >>>>', sala_obj)
         mensagem = Mensagem(mensagem=message_json, remetente=self.scope['user'], sala=sala_obj[0])
@@ -52,15 +51,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
         # type = evento
         # com isso eu posso passar id objetos de user e etc para capturar
         await self.channel_layer.group_send(
-            self.room_group_name, {"type": "chat_message", "message": message_json, 'remetente': self.scope['user'].username}
+            self.room_group_name, {
+                "type": "chat_message",
+                "message": message_json, 'remetente': self.scope['user'].username
+            }
         )
 
     # Receive message from room group
-    # relacionado ao rceive. Ele manda achave type para event junto com a messagem
-    # Essa parte tem mais a ver com a pessoa do outra lado,
+    # relacionado ao receive. Ele manda a chave type para event junto com a mensagem
+    # Essa parte tem mais a ver com a pessoa do outro lado,
     # pois é aqui que a mensagem chega pra ela tem tempo real
     async def chat_message(self, event):
-        message = event['message'] # pegando somente a mensagem em vez do type
+        message = event['message']  # pegando somente a mensagem em vez do type
         remetente = event['remetente']
-        # recebe a mensagem para poder enviar de volta para todos os os usuarios em tempo real
+        # recebe a mensagem para poder enviar de volta para todos os usuarios em tempo real
         await self.send(text_data=json.dumps({"message": message, 'remetente': remetente}))
